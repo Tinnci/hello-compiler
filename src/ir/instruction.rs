@@ -70,6 +70,35 @@ pub enum Opcode {
     // 其他
     Mov, // 移动/复制
     Phi, // Phi节点
+
+    // --- Venus 扩展指令 (来自硬件 OP_TYPE 枚举) ---
+    // 乘法扩展
+    MulH,       // 高位乘法 (signed * signed)
+    MulHU,      // 高位乘法 (unsigned * unsigned)
+    MulHSU,     // 高位乘法 (signed * unsigned)
+    MulAdd,     // 乘加
+    MulSub,     // 乘减
+    AddMul,     // 加后乘
+    SubMul,     // 减后乘
+    CmxMul,     // 复数乘 (Complex Multiply)
+
+    // 除法/取余
+    Div,        // 除法 (signed)
+    DivU,       // 除法 (unsigned)
+    Rem,        // 取余 (signed)
+    RemU,       // 取余 (unsigned)
+
+    // 饱和算术
+    SAddSat,    // 饱和加法 (signed)
+    SAddUSat,   // 饱和加法 (unsigned)
+    SSubSat,    // 饱和减法 (signed)
+    SSubUSat,   // 饱和减法 (unsigned)
+
+    // 其他扩展
+    RSub,       // 反向减法
+    ShuffleClbmv, // 特殊洗牌指令
+    SetCsr,     // 设置 CSR
+    Yield,      // 让出执行权
 }
 
 impl fmt::Display for Opcode {
@@ -111,6 +140,26 @@ impl fmt::Display for Opcode {
             Opcode::Ret => "ret",
             Opcode::Mov => "mov",
             Opcode::Phi => "phi",
+            Opcode::MulH => "mulh",
+            Opcode::MulHU => "mulhu",
+            Opcode::MulHSU => "mulhsu",
+            Opcode::MulAdd => "muladd",
+            Opcode::MulSub => "mulsub",
+            Opcode::AddMul => "addmul",
+            Opcode::SubMul => "submul",
+            Opcode::CmxMul => "cmxmul",
+            Opcode::Div => "div",
+            Opcode::DivU => "divu",
+            Opcode::Rem => "rem",
+            Opcode::RemU => "remu",
+            Opcode::SAddSat => "saddsat",
+            Opcode::SAddUSat => "saddusat",
+            Opcode::SSubSat => "ssubsat",
+            Opcode::SSubUSat => "ssubusat",
+            Opcode::RSub => "rsub",
+            Opcode::ShuffleClbmv => "shuffle_clbmv",
+            Opcode::SetCsr => "setcsr",
+            Opcode::Yield => "yield",
         };
         write!(f, "{}", name)
     }

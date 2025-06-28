@@ -31,6 +31,7 @@ impl<'a> Lexer<'a> {
         keywords.insert(".param".to_string(), TokenKind::Param);
         keywords.insert(".entry".to_string(), TokenKind::Entry);
         keywords.insert(".result".to_string(), TokenKind::Result);
+        keywords.insert(".type".to_string(), TokenKind::Type);
 
         // 操作码
         keywords.insert("add".to_string(), TokenKind::Add);
@@ -248,8 +249,36 @@ impl<'a> Lexer<'a> {
             let kind = match c {
                 // 标点符号
                 '.' => {
-                    self.next_char();
-                    TokenKind::Dot
+                    let start_location = self.current_location();
+                    let mut identifier = String::new();
+                    identifier.push('.');
+                    self.next_char(); // Consume the dot
+
+                    // Read subsequent alphanumeric or underscore characters
+                    while let Some(&c) = self.peek_char() {
+                        if c.is_alphanumeric() || c == '_' {
+                            identifier.push(c);
+                            self.next_char();
+                        } else {
+                            break;
+                        }
+                    }
+
+                    // Check if it's a keyword (like ".module", ".function")
+                    if let Some(kind) = self.keywords.get(&identifier).cloned() {
+                        kind
+                    } else if identifier == "." { // It was just a dot
+                        TokenKind::Dot
+                    } else { // It started with . but not a recognized keyword or just a dot
+                        // This could be an error or a different kind of identifier.
+                        // For now, treat it as an Unknown token or a regular identifier.
+                        // Depending on the VIL spec, this might need more specific error handling.
+                        // Assuming it's an error for now if it doesn't match a keyword.
+                        return Err(ParseError::new_lexical_error(
+                            start_location,
+                            &format!("未知的点前缀标识符: '{}'", identifier),
+                        ));
+                    }
                 }
                 ',' => {
                     self.next_char();
@@ -298,11 +327,15 @@ impl<'a> Lexer<'a> {
                 '=' => {
                     self.next_char();
                     TokenKind::Equal
-                }
+                },
                 '@' => {
                     self.next_char();
                     TokenKind::At
-                }
+                },
+                '*' => {
+                    self.next_char();
+                    TokenKind::Star
+                },
 
                 // 注释
                 '/' => {
@@ -314,7 +347,7 @@ impl<'a> Lexer<'a> {
                         self.next_char();
                         TokenKind::Unknown
                     }
-                }
+                },
 
                 // 字符串字面量
                 '"' => return self.read_string().map(|kind| Token::new(kind, location)),
@@ -323,13 +356,13 @@ impl<'a> Lexer<'a> {
                 c if c.is_digit(10) => {
                     self.next_char();
                     self.read_number(c)
-                }
+                },
 
                 // 标识符或关键字
                 c if c.is_alphabetic() || c == '_' || c == '%' => {
                     self.next_char();
                     self.read_identifier(c)
-                }
+                },
 
                 // 未知字符
                 _ => {
@@ -373,9 +406,18 @@ mod tests {
         let mut lexer = Lexer::new(source, "test.vil");
         let tokens = lexer.tokenize().unwrap();
 
-        assert_eq!(tokens.len(), 9); // Module, Identifier, Function, Identifier, LParen, RParen, LBrace, Ret, Semicolon, RBrace, EOF
-        assert_eq!(tokens[0].kind, TokenKind::Dot);
-        assert_eq!(tokens[1].kind, TokenKind::Identifier("module".to_string()));
+        assert_eq!(tokens.len(), 11);
+        assert_eq!(tokens[0].kind, TokenKind::Module);
+        assert_eq!(tokens[1].kind, TokenKind::Identifier("test".to_string()));
+        assert_eq!(tokens[2].kind, TokenKind::Function);
+        assert_eq!(tokens[3].kind, TokenKind::Identifier("main".to_string()));
+        assert_eq!(tokens[4].kind, TokenKind::LParen);
+        assert_eq!(tokens[5].kind, TokenKind::RParen);
+        assert_eq!(tokens[6].kind, TokenKind::LBrace);
+        assert_eq!(tokens[7].kind, TokenKind::Ret);
+        assert_eq!(tokens[8].kind, TokenKind::Semicolon);
+        assert_eq!(tokens[9].kind, TokenKind::RBrace);
+        assert_eq!(tokens[10].kind, TokenKind::EOF);
         // ... 更多断言
     }
 

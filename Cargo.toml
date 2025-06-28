@@ -37,6 +37,7 @@ path = "src/tools/vlink/main.rs"
 [[bin]]
 name = "vcc"
 path = "src/tools/vcc/main.rs"
+dependencies = ["vil"]
 
 [lib]
 name = "vil"

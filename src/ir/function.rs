@@ -59,6 +59,11 @@ impl Argument {
     pub fn get_parent(&self) -> Option<FunctionRef> {
         self.parent.as_ref().and_then(|weak_ref| weak_ref.upgrade())
     }
+
+    /// 设置所属函数 (弱引用)
+    pub fn set_parent(&mut self, parent: Option<WeakFunctionRef>) {
+        self.parent = parent;
+    }
 }
 
 impl fmt::Display for Argument {

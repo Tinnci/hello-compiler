@@ -32,6 +32,10 @@ pub enum TokenKind {
     Entry,    // .entry
     Result,   // .result
 
+    // 类型相关
+    Type,       // .type (用于表示类型声明)
+    Star,       // * (用于指针类型)
+
     // 操作码
     Add,       // add
     Sub,       // sub
@@ -47,9 +51,9 @@ pub enum TokenKind {
     Not,       // not
     CmpEq,     // cmpeq
     CmpNe,     // cmpne
-    CmpGt,     // cmpgt
+    CmpGt,      // cmpgt
     CmpGe,     // cmpge
-    CmpLt,     // cmplt
+    CmpLt,      // cmplt
     CmpLe,     // cmple
     PredAnd,   // pand
     PredOr,    // por
@@ -116,6 +120,9 @@ impl fmt::Display for TokenKind {
             TokenKind::Entry => write!(f, ".entry"),
             TokenKind::Result => write!(f, ".result"),
 
+            TokenKind::Type => write!(f, ".type"),
+            TokenKind::Star => write!(f, "*"),
+
             TokenKind::Add => write!(f, "add"),
             TokenKind::Sub => write!(f, "sub"),
             TokenKind::Mul => write!(f, "mul"),
@@ -168,6 +175,24 @@ impl fmt::Display for TokenKind {
 
             TokenKind::EOF => write!(f, "EOF"),
             TokenKind::Unknown => write!(f, "UNKNOWN"),
+        }
+    }
+}
+
+impl TokenKind {
+    pub fn get_int_literal(&self) -> Option<i64> {
+        if let TokenKind::IntLiteral(n) = self {
+            Some(*n)
+        } else {
+            None
+        }
+    }
+
+    pub fn get_identifier(&self) -> Option<&str> {
+        if let TokenKind::Identifier(s) = self {
+            Some(s)
+        } else {
+            None
         }
     }
 }
