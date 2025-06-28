@@ -1,0 +1,43 @@
+[package]
+name = "vemu-venus-compiler-rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# 核心依赖
+thiserror = "1.0"       # 错误处理
+log = "0.4"             # 日志接口
+env_logger = "0.10"     # 日志实现
+clap = { version = "4.4", features = ["derive"] }  # 命令行参数解析
+
+# 可选的LLVM绑定
+inkwell = { version = "0.2.0", features = ["llvm15-0"], optional = true }
+
+[dev-dependencies]
+pretty_assertions = "1.4"  # 更好的断言错误信息
+tempfile = "3.8"           # 临时文件处理
+
+[features]
+default = []
+llvm-backend = ["inkwell"]  # 启用LLVM后端
+
+# 工具二进制文件
+[[bin]]
+name = "vilas"
+path = "src/tools/vilas/main.rs"
+
+[[bin]]
+name = "vildis"
+path = "src/tools/vildis/main.rs"
+
+[[bin]]
+name = "vlink"
+path = "src/tools/vlink/main.rs"
+
+[[bin]]
+name = "vcc"
+path = "src/tools/vcc/main.rs"
+
+[lib]
+name = "vil"
+path = "src/lib.rs"
