@@ -2,93 +2,93 @@
 //
 // 这个模块定义了 VIL 的词法单元类型
 
-use std::fmt;
 use crate::frontend::error::SourceLocation;
+use std::fmt;
 
 /// 词法单元种类
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenKind {
     // 标点符号
-    Dot,        // .
-    Comma,      // ,
-    Colon,      // :
-    Semicolon,  // ;
-    LParen,     // (
-    RParen,     // )
-    LBrace,     // {
-    RBrace,     // }
-    LBracket,   // [
-    RBracket,   // ]
-    LAngle,     // <
-    RAngle,     // >
-    Equal,      // =
-    At,         // @
-    
+    Dot,       // .
+    Comma,     // ,
+    Colon,     // :
+    Semicolon, // ;
+    LParen,    // (
+    RParen,    // )
+    LBrace,    // {
+    RBrace,    // }
+    LBracket,  // [
+    RBracket,  // ]
+    LAngle,    // <
+    RAngle,    // >
+    Equal,     // =
+    At,        // @
+
     // 关键字
-    Module,     // .module
-    Function,   // .function
-    Memory,     // .memory
-    Param,      // .param
-    Entry,      // .entry
-    Result,     // .result
-    
+    Module,   // .module
+    Function, // .function
+    Memory,   // .memory
+    Param,    // .param
+    Entry,    // .entry
+    Result,   // .result
+
     // 操作码
-    Add,        // add
-    Sub,        // sub
-    Mul,        // mul
-    SAdd,       // sadd
-    SMul,       // smul
-    Sra,        // sra
-    Srl,        // srl
-    Sll,        // sll
-    And,        // and
-    Or,         // or
-    Xor,        // xor
-    Not,        // not
-    CmpEq,      // cmpeq
-    CmpNe,      // cmpne
-    CmpGt,      // cmpgt
-    CmpGe,      // cmpge
-    CmpLt,      // cmplt
-    CmpLe,      // cmple
-    PredAnd,    // pand
-    PredOr,     // por
-    PredNot,    // pnot
-    Load,       // load
-    Store,      // store
-    RedSum,     // redsum
-    RedMax,     // redmax
-    RedMin,     // redmin
-    Range,      // range
-    Broadcast,  // broadcast
-    Shuffle,    // shuffle
-    Alloc,      // alloc
-    Free,       // free
-    Br,         // br
-    CondBr,     // condbr
-    Ret,        // ret
-    Mov,        // mov
-    Phi,        // phi
-    
+    Add,       // add
+    Sub,       // sub
+    Mul,       // mul
+    SAdd,      // sadd
+    SMul,      // smul
+    Sra,       // sra
+    Srl,       // srl
+    Sll,       // sll
+    And,       // and
+    Or,        // or
+    Xor,       // xor
+    Not,       // not
+    CmpEq,     // cmpeq
+    CmpNe,     // cmpne
+    CmpGt,     // cmpgt
+    CmpGe,     // cmpge
+    CmpLt,     // cmplt
+    CmpLe,     // cmple
+    PredAnd,   // pand
+    PredOr,    // por
+    PredNot,   // pnot
+    Load,      // load
+    Store,     // store
+    RedSum,    // redsum
+    RedMax,    // redmax
+    RedMin,    // redmin
+    Range,     // range
+    Broadcast, // broadcast
+    Shuffle,   // shuffle
+    Alloc,     // alloc
+    Free,      // free
+    Br,        // br
+    CondBr,    // condbr
+    Ret,       // ret
+    Mov,       // mov
+    Phi,       // phi
+
     // 修饰符
-    Vector,     // .v
-    Scalar,     // .s
-    Predicate,  // .p
-    
+    Vector,    // .v
+    Scalar,    // .s
+    Predicate, // .p
+
     // 内存空间
-    Generic,    // generic
-    VSPM,       // vspm
-    SRAM,       // sram
-    Parameter,  // param
-    
+    Generic,   // generic
+    VSPM,      // vspm
+    SRAM,      // sram
+    Parameter, // param
+
     // 标识符和字面量
     Identifier(String),    // 标识符
     IntLiteral(i64),       // 整数字面量
     StringLiteral(String), // 字符串字面量
-    
+
     // 特殊标记
-    EOF,        // 文件结束
-    Unknown,    // 未知标记
+    EOF,     // 文件结束
+    Unknown, // 未知标记
 }
 
 impl fmt::Display for TokenKind {
@@ -108,14 +108,14 @@ impl fmt::Display for TokenKind {
             TokenKind::RAngle => write!(f, ">"),
             TokenKind::Equal => write!(f, "="),
             TokenKind::At => write!(f, "@"),
-            
+
             TokenKind::Module => write!(f, ".module"),
             TokenKind::Function => write!(f, ".function"),
             TokenKind::Memory => write!(f, ".memory"),
             TokenKind::Param => write!(f, ".param"),
             TokenKind::Entry => write!(f, ".entry"),
             TokenKind::Result => write!(f, ".result"),
-            
+
             TokenKind::Add => write!(f, "add"),
             TokenKind::Sub => write!(f, "sub"),
             TokenKind::Mul => write!(f, "mul"),
@@ -152,20 +152,20 @@ impl fmt::Display for TokenKind {
             TokenKind::Ret => write!(f, "ret"),
             TokenKind::Mov => write!(f, "mov"),
             TokenKind::Phi => write!(f, "phi"),
-            
+
             TokenKind::Vector => write!(f, ".v"),
             TokenKind::Scalar => write!(f, ".s"),
             TokenKind::Predicate => write!(f, ".p"),
-            
+
             TokenKind::Generic => write!(f, "generic"),
             TokenKind::VSPM => write!(f, "vspm"),
             TokenKind::SRAM => write!(f, "sram"),
             TokenKind::Parameter => write!(f, "param"),
-            
+
             TokenKind::Identifier(s) => write!(f, "{}", s),
             TokenKind::IntLiteral(n) => write!(f, "{}", n),
             TokenKind::StringLiteral(s) => write!(f, "\"{}\"", s),
-            
+
             TokenKind::EOF => write!(f, "EOF"),
             TokenKind::Unknown => write!(f, "UNKNOWN"),
         }
@@ -189,4 +189,4 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} at {}", self.kind, self.location)
     }
-} 
+}

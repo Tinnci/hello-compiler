@@ -2,14 +2,14 @@
 //
 // 这个模块定义了 VIL 的模块类，包含函数和全局内存空间
 
-use std::rc::Rc;
-use std::cell::RefCell;
-use std::fmt;
-use std::collections::HashMap;
-use crate::ir::value::Value;
-use crate::ir::types::{Type, TypeRef};
-use crate::ir::function::FunctionRef; // 导入 FunctionRef
 use crate::ir::MemorySpace;
+use crate::ir::function::FunctionRef; // 导入 FunctionRef
+use crate::ir::types::{Type, TypeRef};
+use crate::ir::value::Value;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::fmt;
+use std::rc::Rc;
 
 // Module 引用
 pub type ModuleRef = Rc<RefCell<Module>>;
@@ -52,7 +52,14 @@ impl GlobalMemorySpace {
 
 impl fmt::Display for GlobalMemorySpace {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, ".memory {} [{}] <{} x {}>", self.name, self.space, self.element_type.borrow(), self.length)
+        write!(
+            f,
+            ".memory {} [{}] <{} x {}>",
+            self.name,
+            self.space,
+            self.element_type.borrow(),
+            self.length
+        )
     }
 }
 
@@ -82,7 +89,8 @@ impl Module {
 
     /// 添加函数
     pub fn add_function(&mut self, func: FunctionRef) {
-        self.functions.insert(func.borrow().get_name().to_string(), func.clone());
+        self.functions
+            .insert(func.borrow().get_name().to_string(), func.clone());
     }
 
     /// 通过名称获取函数
@@ -97,7 +105,8 @@ impl Module {
 
     /// 添加全局内存空间
     pub fn add_global_memory_space(&mut self, mem_space: Rc<RefCell<GlobalMemorySpace>>) {
-        self.global_memory_spaces.insert(mem_space.borrow().get_name().to_string(), mem_space.clone());
+        self.global_memory_spaces
+            .insert(mem_space.borrow().get_name().to_string(), mem_space.clone());
     }
 
     /// 通过名称获取全局内存空间
@@ -131,8 +140,8 @@ impl fmt::Display for Module {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ir::types::{Type, TypeKind};
     use crate::ir::function::Function;
+    use crate::ir::types::{Type, TypeKind};
 
     #[test]
     fn test_module_creation() {
@@ -143,7 +152,11 @@ mod tests {
     #[test]
     fn test_add_function_to_module() {
         let mut module = Module::new("test_module".to_string());
-        let func = Rc::new(RefCell::new(Function::new("test_func".to_string(), Type::get_void_type(), Vec::new())));
+        let func = Rc::new(RefCell::new(Function::new(
+            "test_func".to_string(),
+            Type::get_void_type(),
+            Vec::new(),
+        )));
         module.add_function(func.clone());
         assert!(module.get_function("test_func").is_some());
         assert_eq!(module.get_functions().len(), 1);
@@ -162,4 +175,4 @@ mod tests {
         assert!(module.get_global_memory_space("vspm_buffer").is_some());
         assert_eq!(module.get_global_memory_spaces().len(), 1);
     }
-} 
+}

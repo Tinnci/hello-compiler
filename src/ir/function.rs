@@ -2,12 +2,12 @@
 //
 // 这个模块定义了 VIL 的函数类，包含参数和基本块
 
-use std::rc::{Rc, Weak};
+use crate::ir::basic_block::BasicBlockRef;
+use crate::ir::types::{Type, TypeKind, TypeRef};
+use crate::ir::value::Value;
 use std::cell::RefCell;
 use std::fmt;
-use crate::ir::value::Value;
-use crate::ir::types::{Type, TypeRef, TypeKind};
-use crate::ir::basic_block::BasicBlockRef; // 导入 BasicBlockRef
+use std::rc::{Rc, Weak}; // 导入 BasicBlockRef
 
 // Function 引用
 pub type FunctionRef = Rc<RefCell<Function>>;
@@ -22,12 +22,17 @@ pub type ArgumentRef = Rc<RefCell<Argument>>;
 pub struct Argument {
     value: Value,
     parent: Option<WeakFunctionRef>, // 所属函数 (弱引用)
-    arg_idx: usize,             // 参数索引
+    arg_idx: usize,                  // 参数索引
 }
 
 impl Argument {
     /// 创建一个新的函数参数
-    pub fn new(type_: TypeRef, name: String, parent: Option<WeakFunctionRef>, arg_idx: usize) -> Self {
+    pub fn new(
+        type_: TypeRef,
+        name: String,
+        parent: Option<WeakFunctionRef>,
+        arg_idx: usize,
+    ) -> Self {
         Argument {
             value: Value::new(type_, name),
             parent,
@@ -127,7 +132,7 @@ impl Function {
     pub fn get_arguments(&self) -> &[ArgumentRef] {
         &self.arguments
     }
-    
+
     /// 添加参数
     pub fn add_argument(&mut self, arg: ArgumentRef) {
         self.arguments.push(arg);
@@ -144,7 +149,7 @@ impl fmt::Display for Function {
             write!(f, "    .param {}", arg.borrow())?;
         }
         writeln!(f, ") {{")?;
-        
+
         for bb in &self.basic_blocks {
             writeln!(f, "{}", bb.borrow())?;
         }
@@ -152,21 +157,20 @@ impl fmt::Display for Function {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::ir::types::{Type, TypeKind};
-    
+
     #[test]
     fn test_function_creation() {
         let ret_type = Type::get_void_type();
         let param_type1 = Type::get_int_type(TypeKind::Int32);
         let param_type2 = Type::get_vector_type(Type::get_int_type(TypeKind::Int16), 4);
         let param_types = vec![param_type1.clone(), param_type2.clone()];
-        
+
         let func = Function::new("my_func".to_string(), ret_type.clone(), param_types.clone());
-        
+
         assert_eq!(func.get_name(), "my_func");
         assert_eq!(func.get_return_type().borrow().to_string(), "void");
         assert_eq!(func.get_param_types().len(), 2);
@@ -182,4 +186,4 @@ mod tests {
         assert_eq!(arg.get_type().borrow().to_string(), "i32");
         assert_eq!(arg.get_arg_idx(), 0);
     }
-} 
+}

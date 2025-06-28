@@ -3,7 +3,7 @@
 // 这个模块定义了 VIL 的抽象语法树 (AST) 节点
 
 use crate::frontend::error::SourceLocation;
-use crate::ir::{ModuleRef, FunctionRef, BasicBlockRef, InstructionRef};
+use crate::ir::{BasicBlockRef, FunctionRef, InstructionRef, ModuleRef};
 
 /// AST 节点
 #[derive(Debug)]
@@ -21,4 +21,4 @@ impl ASTNode {
         // 实际实现中，这里需要根据具体的 AST 节点类型返回其对应的 SourceLocation
         SourceLocation::new("ast.rs", 0, 0) // 占位符
     }
-} 
+}

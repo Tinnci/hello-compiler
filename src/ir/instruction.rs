@@ -2,14 +2,14 @@
 //
 // 这个模块定义了 VIL 的指令类，包括各种指令类型
 
-use std::rc::Rc;
+use crate::ir::MemorySpace;
+use crate::ir::basic_block::BasicBlockRef;
+use crate::ir::operand::OperandRef;
+use crate::ir::types::{Type, TypeRef};
+use crate::ir::value::Value;
 use std::cell::RefCell;
 use std::fmt;
-use crate::ir::value::Value;
-use crate::ir::types::{Type, TypeRef};
-use crate::ir::operand::OperandRef;
-use crate::ir::basic_block::BasicBlockRef;
-use crate::ir::MemorySpace;
+use std::rc::Rc;
 
 // Instruction 引用
 pub type InstructionRef = Rc<RefCell<Instruction>>;
@@ -18,58 +18,58 @@ pub type InstructionRef = Rc<RefCell<Instruction>>;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Opcode {
     // 算术指令
-    Add,        // 加法
-    Sub,        // 减法
-    Mul,        // 乘法
-    SAdd,       // 向量与标量加法
-    SMul,       // 向量与标量乘法
-    Sra,        // 算术右移
-    Srl,        // 逻辑右移
-    Sll,        // 左移
-    
+    Add,  // 加法
+    Sub,  // 减法
+    Mul,  // 乘法
+    SAdd, // 向量与标量加法
+    SMul, // 向量与标量乘法
+    Sra,  // 算术右移
+    Srl,  // 逻辑右移
+    Sll,  // 左移
+
     // 逻辑指令
-    And,        // 按位与
-    Or,         // 按位或
-    Xor,        // 按位异或
-    Not,        // 按位取反
-    
+    And, // 按位与
+    Or,  // 按位或
+    Xor, // 按位异或
+    Not, // 按位取反
+
     // 比较指令
-    CmpEq,      // 等于比较
-    CmpNe,      // 不等比较
-    CmpGt,      // 大于比较
-    CmpGe,      // 大于等于比较
-    CmpLt,      // 小于比较
-    CmpLe,      // 小于等于比较
-    
+    CmpEq, // 等于比较
+    CmpNe, // 不等比较
+    CmpGt, // 大于比较
+    CmpGe, // 大于等于比较
+    CmpLt, // 小于比较
+    CmpLe, // 小于等于比较
+
     // 谓词操作指令
-    PredAnd,    // 谓词与
-    PredOr,     // 谓词或
-    PredNot,    // 谓词取反
-    
+    PredAnd, // 谓词与
+    PredOr,  // 谓词或
+    PredNot, // 谓词取反
+
     // 内存操作指令
-    Load,       // 加载
-    Store,      // 存储
-    
+    Load,  // 加载
+    Store, // 存储
+
     // 归约指令
-    RedSum,     // 求和归约
-    RedMax,     // 最大值归约
-    RedMin,     // 最小值归约
-    
+    RedSum, // 求和归约
+    RedMax, // 最大值归约
+    RedMin, // 最小值归约
+
     // 特殊指令
-    Range,      // 生成序列
-    Broadcast,  // 广播标量
-    Shuffle,    // 向量洗牌
-    Alloc,      // 分配内存
-    Free,       // 释放内存
-    
+    Range,     // 生成序列
+    Broadcast, // 广播标量
+    Shuffle,   // 向量洗牌
+    Alloc,     // 分配内存
+    Free,      // 释放内存
+
     // 控制流指令
-    Br,         // 无条件跳转
-    CondBr,     // 条件跳转
-    Ret,        // 函数返回
-    
+    Br,     // 无条件跳转
+    CondBr, // 条件跳转
+    Ret,    // 函数返回
+
     // 其他
-    Mov,        // 移动/复制
-    Phi,        // Phi节点
+    Mov, // 移动/复制
+    Phi, // Phi节点
 }
 
 impl fmt::Display for Opcode {
@@ -119,10 +119,10 @@ impl fmt::Display for Opcode {
 /// 指令修饰符枚举
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum InstructionModifier {
-    None,       // 无修饰符
-    Vector,     // 向量操作
-    Scalar,     // 标量操作
-    Predicate,  // 谓词操作
+    None,      // 无修饰符
+    Vector,    // 向量操作
+    Scalar,    // 标量操作
+    Predicate, // 谓词操作
 }
 
 impl fmt::Display for InstructionModifier {
@@ -160,32 +160,32 @@ impl Instruction {
             predicate: None,
         }
     }
-    
+
     /// 获取操作码
     pub fn get_opcode(&self) -> Opcode {
         self.opcode
     }
-    
+
     /// 获取修饰符
     pub fn get_modifier(&self) -> InstructionModifier {
         self.modifier
     }
-    
+
     /// 获取所属的基本块
     pub fn get_parent(&self) -> Option<BasicBlockRef> {
         self.parent.clone()
     }
-    
+
     /// 设置所属的基本块
     pub fn set_parent(&mut self, parent: Option<BasicBlockRef>) {
         self.parent = parent;
     }
-    
+
     /// 获取操作数数量
     pub fn get_num_operands(&self) -> usize {
         self.operands.len()
     }
-    
+
     /// 获取指定索引的操作数
     pub fn get_operand(&self, index: usize) -> Option<OperandRef> {
         if index < self.operands.len() {
@@ -194,7 +194,7 @@ impl Instruction {
             None
         }
     }
-    
+
     /// 设置指定索引的操作数
     pub fn set_operand(&mut self, index: usize, operand: OperandRef) {
         if index < self.operands.len() {
@@ -205,32 +205,32 @@ impl Instruction {
             panic!("操作数索引超出范围");
         }
     }
-    
+
     /// 添加操作数
     pub fn add_operand(&mut self, operand: OperandRef) {
         self.operands.push(operand);
     }
-    
+
     /// 获取所有操作数
     pub fn get_operands(&self) -> &[OperandRef] {
         &self.operands
     }
-    
+
     /// 获取谓词操作数（条件执行）
     pub fn get_predicate(&self) -> Option<OperandRef> {
         self.predicate.clone()
     }
-    
+
     /// 设置谓词操作数（条件执行）
     pub fn set_predicate(&mut self, predicate: Option<OperandRef>) {
         self.predicate = predicate;
     }
-    
+
     /// 是否为条件执行
     pub fn is_predicated(&self) -> bool {
         self.predicate.is_some()
     }
-    
+
     /// 判断指令是否产生结果（即是否具有返回值）
     pub fn has_result(&self) -> bool {
         match self.opcode {
@@ -239,17 +239,17 @@ impl Instruction {
             _ => true,
         }
     }
-    
+
     /// 获取指令的名称
     pub fn get_name(&self) -> &str {
         self.value.get_name()
     }
-    
+
     /// 设置指令的名称
     pub fn set_name(&mut self, name: String) {
         self.value.set_name(name);
     }
-    
+
     /// 获取指令的类型
     pub fn get_type(&self) -> TypeRef {
         self.value.get_type()
@@ -267,15 +267,15 @@ impl fmt::Display for Instruction {
             };
             write!(f, "{} = ", name)?;
         }
-        
+
         // 输出操作码和修饰符
         write!(f, "{}{}", self.opcode, self.modifier)?;
-        
+
         // 输出谓词（如果有）
         if let Some(pred) = &self.predicate {
             write!(f, " [{}]", pred.borrow())?;
         }
-        
+
         // 输出操作数
         if !self.operands.is_empty() {
             write!(f, " ")?;
@@ -286,14 +286,20 @@ impl fmt::Display for Instruction {
                 write!(f, "{}", op.borrow())?;
             }
         }
-        
+
         Ok(())
     }
 }
 
 impl fmt::Debug for Instruction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Instruction({}{}, {} operands)", self.opcode, self.modifier, self.operands.len())
+        write!(
+            f,
+            "Instruction({}{}, {} operands)",
+            self.opcode,
+            self.modifier,
+            self.operands.len()
+        )
     }
 }
 // 以下是各种具体的指令类型实现
@@ -318,28 +324,34 @@ pub struct BinaryInstruction {
 
 impl BinaryInstruction {
     /// 创建一个新的二元运算指令
-    pub fn new(opcode: Opcode, type_: TypeRef, lhs: OperandRef, rhs: OperandRef, modifier: InstructionModifier) -> Self {
+    pub fn new(
+        opcode: Opcode,
+        type_: TypeRef,
+        lhs: OperandRef,
+        rhs: OperandRef,
+        modifier: InstructionModifier,
+    ) -> Self {
         let mut instruction = Instruction::new(opcode, type_, modifier);
         instruction.add_operand(lhs);
         instruction.add_operand(rhs);
         BinaryInstruction { instruction }
     }
-    
+
     /// 获取左操作数
     pub fn get_lhs(&self) -> OperandRef {
         self.instruction.get_operand(0).unwrap()
     }
-    
+
     /// 获取右操作数
     pub fn get_rhs(&self) -> OperandRef {
         self.instruction.get_operand(1).unwrap()
     }
-    
+
     /// 设置左操作数
     pub fn set_lhs(&mut self, lhs: OperandRef) {
         self.instruction.set_operand(0, lhs);
     }
-    
+
     /// 设置右操作数
     pub fn set_rhs(&mut self, rhs: OperandRef) {
         self.instruction.set_operand(1, rhs);
@@ -355,13 +367,18 @@ pub struct MemoryInstruction {
 
 impl MemoryInstruction {
     /// 创建一个新的内存操作指令
-    pub fn new(opcode: Opcode, type_: TypeRef, space: MemorySpace, modifier: InstructionModifier) -> Self {
+    pub fn new(
+        opcode: Opcode,
+        type_: TypeRef,
+        space: MemorySpace,
+        modifier: InstructionModifier,
+    ) -> Self {
         MemoryInstruction {
             instruction: Instruction::new(opcode, type_, modifier),
             space,
         }
     }
-    
+
     /// 获取内存空间
     pub fn get_memory_space(&self) -> MemorySpace {
         self.space
@@ -376,17 +393,22 @@ pub struct LoadInstruction {
 
 impl LoadInstruction {
     /// 创建一个新的加载指令
-    pub fn new(type_: TypeRef, address: OperandRef, space: MemorySpace, modifier: InstructionModifier) -> Self {
+    pub fn new(
+        type_: TypeRef,
+        address: OperandRef,
+        space: MemorySpace,
+        modifier: InstructionModifier,
+    ) -> Self {
         let mut memory_instruction = MemoryInstruction::new(Opcode::Load, type_, space, modifier);
         memory_instruction.instruction.add_operand(address);
         LoadInstruction { memory_instruction }
     }
-    
+
     /// 获取地址操作数
     pub fn get_address(&self) -> OperandRef {
         self.memory_instruction.instruction.get_operand(0).unwrap()
     }
-    
+
     /// 设置地址操作数
     pub fn set_address(&mut self, address: OperandRef) {
         self.memory_instruction.instruction.set_operand(0, address);
@@ -401,30 +423,36 @@ pub struct StoreInstruction {
 
 impl StoreInstruction {
     /// 创建一个新的存储指令
-    pub fn new(value: OperandRef, address: OperandRef, space: MemorySpace, modifier: InstructionModifier) -> Self {
+    pub fn new(
+        value: OperandRef,
+        address: OperandRef,
+        space: MemorySpace,
+        modifier: InstructionModifier,
+    ) -> Self {
         // 存储指令没有返回值，使用 void 类型
         let void_type = Type::get_void_type();
-        let mut memory_instruction = MemoryInstruction::new(Opcode::Store, void_type, space, modifier);
+        let mut memory_instruction =
+            MemoryInstruction::new(Opcode::Store, void_type, space, modifier);
         memory_instruction.instruction.add_operand(value);
         memory_instruction.instruction.add_operand(address);
         StoreInstruction { memory_instruction }
     }
-    
+
     /// 获取值操作数
     pub fn get_value(&self) -> OperandRef {
         self.memory_instruction.instruction.get_operand(0).unwrap()
     }
-    
+
     /// 获取地址操作数
     pub fn get_address(&self) -> OperandRef {
         self.memory_instruction.instruction.get_operand(1).unwrap()
     }
-    
+
     /// 设置值操作数
     pub fn set_value(&mut self, value: OperandRef) {
         self.memory_instruction.instruction.set_operand(0, value);
     }
-    
+
     /// 设置地址操作数
     pub fn set_address(&mut self, address: OperandRef) {
         self.memory_instruction.instruction.set_operand(1, address);
@@ -439,17 +467,22 @@ pub struct ReductionInstruction {
 
 impl ReductionInstruction {
     /// 创建一个新的归约指令
-    pub fn new(opcode: Opcode, result_type: TypeRef, vector: OperandRef, modifier: InstructionModifier) -> Self {
+    pub fn new(
+        opcode: Opcode,
+        result_type: TypeRef,
+        vector: OperandRef,
+        modifier: InstructionModifier,
+    ) -> Self {
         let mut instruction = Instruction::new(opcode, result_type, modifier);
         instruction.add_operand(vector);
         ReductionInstruction { instruction }
     }
-    
+
     /// 获取向量操作数
     pub fn get_vector(&self) -> OperandRef {
         self.instruction.get_operand(0).unwrap()
     }
-    
+
     /// 设置向量操作数
     pub fn set_vector(&mut self, vector: OperandRef) {
         self.instruction.set_operand(0, vector);
@@ -470,7 +503,7 @@ impl ControlFlowInstruction {
             instruction: Instruction::new(opcode, type_, InstructionModifier::None),
         }
     }
-    
+
     /// 是否为终结指令
     pub fn is_terminator(&self) -> bool {
         true
@@ -506,14 +539,14 @@ impl MoveInstruction {
         instruction.add_operand(source);
         MoveInstruction { instruction }
     }
-    
+
     /// 获取源操作数
     pub fn get_source(&self) -> OperandRef {
         self.instruction.get_operand(0).unwrap()
     }
-    
+
     /// 设置源操作数
     pub fn set_source(&mut self, source: OperandRef) {
         self.instruction.set_operand(0, source);
     }
-} 
+}
