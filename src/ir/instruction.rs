@@ -73,32 +73,32 @@ pub enum Opcode {
 
     // --- Venus 扩展指令 (来自硬件 OP_TYPE 枚举) ---
     // 乘法扩展
-    MulH,       // 高位乘法 (signed * signed)
-    MulHU,      // 高位乘法 (unsigned * unsigned)
-    MulHSU,     // 高位乘法 (signed * unsigned)
-    MulAdd,     // 乘加
-    MulSub,     // 乘减
-    AddMul,     // 加后乘
-    SubMul,     // 减后乘
-    CmxMul,     // 复数乘 (Complex Multiply)
+    MulH,   // 高位乘法 (signed * signed)
+    MulHU,  // 高位乘法 (unsigned * unsigned)
+    MulHSU, // 高位乘法 (signed * unsigned)
+    MulAdd, // 乘加
+    MulSub, // 乘减
+    AddMul, // 加后乘
+    SubMul, // 减后乘
+    CmxMul, // 复数乘 (Complex Multiply)
 
     // 除法/取余
-    Div,        // 除法 (signed)
-    DivU,       // 除法 (unsigned)
-    Rem,        // 取余 (signed)
-    RemU,       // 取余 (unsigned)
+    Div,  // 除法 (signed)
+    DivU, // 除法 (unsigned)
+    Rem,  // 取余 (signed)
+    RemU, // 取余 (unsigned)
 
     // 饱和算术
-    SAddSat,    // 饱和加法 (signed)
-    SAddUSat,   // 饱和加法 (unsigned)
-    SSubSat,    // 饱和减法 (signed)
-    SSubUSat,   // 饱和减法 (unsigned)
+    SAddSat,  // 饱和加法 (signed)
+    SAddUSat, // 饱和加法 (unsigned)
+    SSubSat,  // 饱和减法 (signed)
+    SSubUSat, // 饱和减法 (unsigned)
 
     // 其他扩展
-    RSub,       // 反向减法
+    RSub,         // 反向减法
     ShuffleClbmv, // 特殊洗牌指令
-    SetCsr,     // 设置 CSR
-    Yield,      // 让出执行权
+    SetCsr,       // 设置 CSR
+    Yield,        // 让出执行权
 }
 
 impl fmt::Display for Opcode {

@@ -33,8 +33,8 @@ pub enum TokenKind {
     Result,   // .result
 
     // 类型相关
-    Type,       // .type (用于表示类型声明)
-    Star,       // * (用于指针类型)
+    Type, // .type (用于表示类型声明)
+    Star, // * (用于指针类型)
 
     // 操作码
     Add,       // add
@@ -51,9 +51,9 @@ pub enum TokenKind {
     Not,       // not
     CmpEq,     // cmpeq
     CmpNe,     // cmpne
-    CmpGt,      // cmpgt
+    CmpGt,     // cmpgt
     CmpGe,     // cmpge
-    CmpLt,      // cmplt
+    CmpLt,     // cmplt
     CmpLe,     // cmple
     PredAnd,   // pand
     PredOr,    // por

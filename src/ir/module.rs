@@ -123,12 +123,12 @@ impl Module {
 impl fmt::Display for Module {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, ".module {}", self.get_name())?;
-        writeln!(f, "")?;
+        writeln!(f)?;
 
         for mem_space in self.get_global_memory_spaces() {
             writeln!(f, "{}", mem_space.borrow())?;
         }
-        writeln!(f, "")?;
+        writeln!(f)?;
 
         for func in self.get_functions() {
             writeln!(f, "{}", func.borrow())?;

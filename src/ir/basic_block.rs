@@ -108,15 +108,6 @@ impl BasicBlock {
     pub fn get_terminator(&self) -> Option<InstructionRef> {
         self.instructions.last().cloned()
     }
-
-    /// 克隆基本块 (深拷贝)
-    pub fn clone(&self) -> Self {
-        BasicBlock {
-            value: Value::new(self.value.get_type(), self.value.get_name().to_string()),
-            parent: self.parent.clone(),
-            instructions: self.instructions.clone(),
-        }
-    }
 }
 
 impl fmt::Display for BasicBlock {
@@ -137,5 +128,15 @@ impl fmt::Debug for BasicBlock {
             self.get_name(),
             self.instructions.len()
         )
+    }
+}
+
+impl Clone for BasicBlock {
+    fn clone(&self) -> Self {
+        BasicBlock {
+            value: Value::new(self.value.get_type(), self.value.get_name().to_string()),
+            parent: self.parent.clone(),
+            instructions: self.instructions.clone(),
+        }
     }
 }

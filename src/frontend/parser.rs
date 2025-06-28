@@ -2,12 +2,12 @@
 //
 // 这个模块实现了 VIL 的语法分析器，将词法单元序列转换为抽象语法树 (AST)
 
+use crate::frontend::error::{ParseError, ParseResult, SourceLocation};
 use crate::frontend::lexer::Lexer;
-use crate::frontend::error::{ParseResult, ParseError, SourceLocation};
 use crate::frontend::token::{Token, TokenKind};
 use crate::ir::{Module, ModuleRef};
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 /// 语法分析器
 pub struct Parser<'a> {
@@ -48,15 +48,17 @@ impl<'a> Parser<'a> {
                 Some(TokenKind::Memory) => {
                     self.consume_expected_token(TokenKind::Memory, "期望关键字 '.memory'")?; // Consumes and advances
                     let mem_space = self.parse_global_memory_space()?; // parse_global_memory_space will assume current_token is the memory name, and consume/advance from there.
-                    module_ref.borrow_mut().add_global_memory_space(Rc::new(RefCell::new(mem_space)));
-                },
+                    module_ref
+                        .borrow_mut()
+                        .add_global_memory_space(Rc::new(RefCell::new(mem_space)));
+                }
                 Some(TokenKind::Function) => {
                     self.consume_expected_token(TokenKind::Function, "期望关键字 '.function'")?; // Consumes and advances
                     let func = self.parse_function()?; // parse_function will assume current_token is the function name, and consume/advance from there.
                     module_ref.borrow_mut().add_function(func);
-                },
+                }
                 Some(TokenKind::EOF) => break, // 文件结束
-                None => break, // 文件结束
+                None => break,                 // 文件结束
                 _ => {
                     return Err(ParseError::new_syntax_error(
                         current_loc,
@@ -84,7 +86,11 @@ impl<'a> Parser<'a> {
     /// 消费当前 token，如果它的种类匹配 `expected_kind`。
     /// 如果匹配成功，则将内部的 `current_token` 更新为下一个 token。
     /// 返回被消费的 token，或在不匹配时返回错误。
-    fn consume_expected_token(&mut self, expected_kind: TokenKind, message: &str) -> ParseResult<Token> {
+    fn consume_expected_token(
+        &mut self,
+        expected_kind: TokenKind,
+        message: &str,
+    ) -> ParseResult<Token> {
         let current_loc = self.current_location();
         let token_to_check = self.current_token.take();
 
@@ -95,10 +101,7 @@ impl<'a> Parser<'a> {
             } else {
                 // If not matched, put the token back so error reporting can point to it
                 self.current_token = Some(token);
-                Err(ParseError::new_syntax_error(
-                    current_loc,
-                    message,
-                ))
+                Err(ParseError::new_syntax_error(current_loc, message))
             }
         } else {
             Err(ParseError::new_syntax_error(
@@ -131,7 +134,10 @@ impl<'a> Parser<'a> {
                 Err(ParseError::new_syntax_error(current_loc, message))
             }
         } else {
-            Err(ParseError::new_syntax_error(current_loc, "意外的文件结束，期望标识符"))
+            Err(ParseError::new_syntax_error(
+                current_loc,
+                "意外的文件结束，期望标识符",
+            ))
         }
     }
 
@@ -150,13 +156,19 @@ impl<'a> Parser<'a> {
                 Err(ParseError::new_syntax_error(current_loc, message))
             }
         } else {
-            Err(ParseError::new_syntax_error(current_loc, "意外的文件结束，期望整数常量"))
+            Err(ParseError::new_syntax_error(
+                current_loc,
+                "意外的文件结束，期望整数常量",
+            ))
         }
     }
 
     /// 期望并消费一个内存空间标识符（generic/vspm/sram/param 或普通 Identifier），返回其字符串值。
     /// 这用于解析诸如 "[vspm]" 或指针类型中的内存空间后缀。
-    fn expect_memory_space_identifier(&mut self, message: &str) -> ParseResult<(String, SourceLocation)> {
+    fn expect_memory_space_identifier(
+        &mut self,
+        message: &str,
+    ) -> ParseResult<(String, SourceLocation)> {
         let current_loc = self.current_location();
         let token_to_check = self.current_token.take();
 
@@ -189,7 +201,10 @@ impl<'a> Parser<'a> {
                 }
             }
         } else {
-            Err(ParseError::new_syntax_error(current_loc, "意外的文件结束，期望内存空间"))
+            Err(ParseError::new_syntax_error(
+                current_loc,
+                "意外的文件结束，期望内存空间",
+            ))
         }
     }
 
@@ -222,7 +237,7 @@ impl<'a> Parser<'a> {
                 "期望基本类型标识符",
             )),
         }?;
-        
+
         // After successfully determining the type, consume the token and advance.
         self.current_token.take(); // Consume the token
         self.advance()?; // Advance to the next token
@@ -237,29 +252,40 @@ impl<'a> Parser<'a> {
             self.consume_expected_token(TokenKind::LAngle, "期望 '<' 开始类型声明")?;
             // `current_token` now holds the inner token (pred or base type).
 
-            let inner_token_kind = self.peek_token_kind().cloned().unwrap_or(TokenKind::Unknown);
+            let inner_token_kind = self
+                .peek_token_kind()
+                .cloned()
+                .unwrap_or(TokenKind::Unknown);
             let _inner_location = self.current_location(); // 已标记为未使用
 
             let parsed_type = match inner_token_kind {
                 TokenKind::Identifier(s) if s == "pred" => {
-                    let (pred_keyword, pred_location) = self.expect_identifier("期望 'pred' 关键字")?;
-                    if pred_keyword != "pred" { return Err(ParseError::new_syntax_error(pred_location, "期望 'pred' 关键字")); }
+                    let (pred_keyword, pred_location) =
+                        self.expect_identifier("期望 'pred' 关键字")?;
+                    if pred_keyword != "pred" {
+                        return Err(ParseError::new_syntax_error(
+                            pred_location,
+                            "期望 'pred' 关键字",
+                        ));
+                    }
                     let (length_val, _) = self.expect_int_literal("期望谓词长度")?;
                     let length = length_val as u32;
                     crate::ir::Type::get_predicate_type(length)
-                },
+                }
                 _ => {
                     // `current_token` holds the element type. parse_base_type will consume it and advance.
                     let element_type = self.parse_base_type()?; // parse_base_type consumes its token and advances.
                     // `current_token` now holds 'x'.
                     let (x_keyword, x_location) = self.expect_identifier("期望 'x'")?;
-                    if x_keyword != "x" { return Err(ParseError::new_syntax_error(x_location, "期望 'x'")); }
+                    if x_keyword != "x" {
+                        return Err(ParseError::new_syntax_error(x_location, "期望 'x'"));
+                    }
                     let (length_val, _) = self.expect_int_literal("期望向量长度")?;
                     let length = length_val as u32;
                     crate::ir::Type::get_vector_type(element_type, length)
                 }
             };
-            
+
             // `current_token` now holds `>`.
             self.consume_expected_token(TokenKind::RAngle, "期望 '>' 闭合类型声明")?;
             // `current_token` now holds the token *after* `>` (could be `*` or something else).
@@ -268,14 +294,14 @@ impl<'a> Parser<'a> {
             if self.peek_token_kind() == Some(&TokenKind::Star) {
                 self.consume_expected_token(TokenKind::Star, "期望 '*'")?;
                 // `current_token` now holds the memory space identifier.
-                let (mem_space_name, mem_space_location) = self.expect_memory_space_identifier("期望内存空间")?;
+                let (mem_space_name, mem_space_location) =
+                    self.expect_memory_space_identifier("期望内存空间")?;
                 let mem_space = parse_memory_space_from_ident(&mem_space_name, mem_space_location)?;
                 // `current_token` now holds the token *after* the memory space.
                 Ok(crate::ir::Type::get_pointer_type(parsed_type, mem_space))
             } else {
                 Ok(parsed_type)
             }
-
         } else {
             // `current_token` holds the base type.
             let base_type = self.parse_base_type()?; // parse_base_type consumes and advances.
@@ -284,7 +310,8 @@ impl<'a> Parser<'a> {
             if self.peek_token_kind() == Some(&TokenKind::Star) {
                 self.consume_expected_token(TokenKind::Star, "期望 '*'")?;
                 // `current_token` now holds the memory space identifier.
-                let (mem_space_name, mem_space_location) = self.expect_memory_space_identifier("期望内存空间")?;
+                let (mem_space_name, mem_space_location) =
+                    self.expect_memory_space_identifier("期望内存空间")?;
                 let mem_space = parse_memory_space_from_ident(&mem_space_name, mem_space_location)?;
                 // `current_token` now holds the token *after* the memory space.
                 Ok(crate::ir::Type::get_pointer_type(base_type, mem_space))
@@ -295,7 +322,10 @@ impl<'a> Parser<'a> {
     }
 
     /// 解析函数参数: `.param %name <type>` 或 `.result %name <type>`
-    fn parse_argument(&mut self, is_result_param: bool) -> ParseResult<crate::ir::function::ArgumentRef> {
+    fn parse_argument(
+        &mut self,
+        is_result_param: bool,
+    ) -> ParseResult<crate::ir::function::ArgumentRef> {
         let _is_result_param = is_result_param; // 已标记为未使用
         // `current_token` should hold the argument name when this function is called.
         let (name, name_location) = self.expect_identifier("期望参数名称 (例如: %in1)")?;
@@ -317,17 +347,15 @@ impl<'a> Parser<'a> {
     fn parse_global_memory_space(&mut self) -> ParseResult<crate::ir::module::GlobalMemorySpace> {
         let _start_location = self.current_location(); // 已标记为未使用
         // `current_token` should hold the memory name when this function is called.
-        println!("parse_global_memory_space: ENTRY - current_token: {:?}", self.current_token);
         let (name, _) = self.expect_identifier("期望内存空间名称")?;
         // `current_token` now holds `[`.
         self.consume_expected_token(TokenKind::LBracket, "期望 '[' 开始内存空间指定")?;
         // `current_token` now holds space identifier
-        let (space_name, space_location) = self.expect_memory_space_identifier("期望内存空间类型 (e.g., vspm, sram)")?;
-        println!("parse_global_memory_space: AFTER SPACE_NAME - current_token: {:?}", self.current_token);
+        let (space_name, space_location) =
+            self.expect_memory_space_identifier("期望内存空间类型 (e.g., vspm, sram)")?;
         let space = parse_memory_space_from_ident(&space_name, space_location)?;
         // `current_token` now holds `]`
         self.consume_expected_token(TokenKind::RBracket, "期望 ']' 闭合内存空间指定")?;
-        println!("parse_global_memory_space: AFTER RBRACKET - current_token: {:?}", self.current_token);
         // 解析元素类型
         let elem_type_token = self.parse_type()?; // parse_type 将消费其相关 token。
 
@@ -354,7 +382,12 @@ impl<'a> Parser<'a> {
         // 处理完长度后，current_token 指向长度之后（若有显式长度）的 token。
         // `current_token` now holds the token *after* the length.
 
-        Ok(crate::ir::module::GlobalMemorySpace::new(name, space, elem_type_token, length))
+        Ok(crate::ir::module::GlobalMemorySpace::new(
+            name,
+            space,
+            elem_type_token,
+            length,
+        ))
     }
 
     /// 解析函数声明: `.function <name>(<params>) { <body> }`
@@ -369,7 +402,9 @@ impl<'a> Parser<'a> {
         let mut param_types = Vec::new();
 
         // 解析参数列表：连续的 .param/.result 项，逗号分隔
-        while matches!(self.peek_token_kind(), Some(&TokenKind::Param)) || matches!(self.peek_token_kind(), Some(&TokenKind::Result)) {
+        while matches!(self.peek_token_kind(), Some(&TokenKind::Param))
+            || matches!(self.peek_token_kind(), Some(&TokenKind::Result))
+        {
             let is_result_param = matches!(self.peek_token_kind(), Some(&TokenKind::Result));
             if is_result_param {
                 self.consume_expected_token(TokenKind::Result, "期望关键字 '.result'")?;
@@ -408,7 +443,10 @@ impl<'a> Parser<'a> {
                     brace_depth -= 1;
                 }
                 Some(TokenKind::EOF) | None => {
-                    return Err(ParseError::new_syntax_error(self.current_location(), "函数体未正确闭合"));
+                    return Err(ParseError::new_syntax_error(
+                        self.current_location(),
+                        "函数体未正确闭合",
+                    ));
                 }
                 _ => {
                     self.advance()?; // consume other tokens
@@ -426,7 +464,8 @@ impl<'a> Parser<'a> {
         )));
 
         for arg in &arguments {
-            arg.borrow_mut().set_parent(Some(Rc::downgrade(&function_ref)));
+            arg.borrow_mut()
+                .set_parent(Some(Rc::downgrade(&function_ref)));
             function_ref.borrow_mut().add_argument(arg.clone());
         }
 
@@ -435,7 +474,10 @@ impl<'a> Parser<'a> {
 }
 
 /// 解析内存空间标识符到 MemorySpace 枚举
-fn parse_memory_space_from_ident(ident: &str, location: SourceLocation) -> ParseResult<crate::ir::MemorySpace> {
+fn parse_memory_space_from_ident(
+    ident: &str,
+    location: SourceLocation,
+) -> ParseResult<crate::ir::MemorySpace> {
     match ident {
         "generic" => Ok(crate::ir::MemorySpace::Generic),
         "vspm" => Ok(crate::ir::MemorySpace::VSPM),
@@ -475,13 +517,22 @@ mod tests {
         assert_eq!(module.borrow().get_name(), "my_module");
         assert_eq!(module.borrow().get_global_memory_spaces().len(), 2);
 
-        let mem1 = module.borrow().get_global_memory_space("vspm_buffer").unwrap();
+        let mem1 = module
+            .borrow()
+            .get_global_memory_space("vspm_buffer")
+            .unwrap();
         assert_eq!(mem1.borrow().get_name(), "vspm_buffer");
         assert_eq!(mem1.borrow().get_space(), crate::ir::MemorySpace::VSPM);
-        assert_eq!(mem1.borrow().get_element_type().borrow().to_string(), "<i16 x 1024>");
+        assert_eq!(
+            mem1.borrow().get_element_type().borrow().to_string(),
+            "<i16 x 1024>"
+        );
         assert_eq!(mem1.borrow().get_length(), 1024);
 
-        let mem2 = module.borrow().get_global_memory_space("sram_buffer").unwrap();
+        let mem2 = module
+            .borrow()
+            .get_global_memory_space("sram_buffer")
+            .unwrap();
         assert_eq!(mem2.borrow().get_name(), "sram_buffer");
         assert_eq!(mem2.borrow().get_space(), crate::ir::MemorySpace::SRAM);
         assert_eq!(mem2.borrow().get_element_type().borrow().to_string(), "i32");
@@ -519,4 +570,4 @@ mod tests {
         assert_eq!(arg3.get_name(), "%out");
         assert_eq!(arg3.get_type().borrow().to_string(), "i32* sram");
     }
-} 
+}

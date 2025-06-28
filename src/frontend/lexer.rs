@@ -164,7 +164,7 @@ impl<'a> Lexer<'a> {
         self.keywords
             .get(&identifier)
             .cloned()
-            .unwrap_or_else(|| TokenKind::Identifier(identifier))
+            .unwrap_or(TokenKind::Identifier(identifier))
     }
 
     /// 读取数字
@@ -174,7 +174,7 @@ impl<'a> Lexer<'a> {
 
         // 读取剩余的数字
         while let Some(&c) = self.peek_char() {
-            if c.is_digit(10) {
+            if c.is_ascii_digit() {
                 number.push(c);
                 self.next_char();
             } else {
@@ -267,9 +267,11 @@ impl<'a> Lexer<'a> {
                     // Check if it's a keyword (like ".module", ".function")
                     if let Some(kind) = self.keywords.get(&identifier).cloned() {
                         kind
-                    } else if identifier == "." { // It was just a dot
+                    } else if identifier == "." {
+                        // It was just a dot
                         TokenKind::Dot
-                    } else { // It started with . but not a recognized keyword or just a dot
+                    } else {
+                        // It started with . but not a recognized keyword or just a dot
                         // This could be an error or a different kind of identifier.
                         // For now, treat it as an Unknown token or a regular identifier.
                         // Depending on the VIL spec, this might need more specific error handling.
@@ -327,15 +329,15 @@ impl<'a> Lexer<'a> {
                 '=' => {
                     self.next_char();
                     TokenKind::Equal
-                },
+                }
                 '@' => {
                     self.next_char();
                     TokenKind::At
-                },
+                }
                 '*' => {
                     self.next_char();
                     TokenKind::Star
-                },
+                }
 
                 // 注释
                 '/' => {
@@ -347,22 +349,22 @@ impl<'a> Lexer<'a> {
                         self.next_char();
                         TokenKind::Unknown
                     }
-                },
+                }
 
                 // 字符串字面量
                 '"' => return self.read_string().map(|kind| Token::new(kind, location)),
 
                 // 数字
-                c if c.is_digit(10) => {
+                c if c.is_ascii_digit() => {
                     self.next_char();
                     self.read_number(c)
-                },
+                }
 
                 // 标识符或关键字
                 c if c.is_alphabetic() || c == '_' || c == '%' => {
                     self.next_char();
                     self.read_identifier(c)
-                },
+                }
 
                 // 未知字符
                 _ => {
