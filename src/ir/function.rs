@@ -133,6 +133,11 @@ impl Function {
         self.basic_blocks.push(bb);
     }
 
+    /// 获取所有基本块
+    pub fn get_basic_blocks(&self) -> &[BasicBlockRef] {
+        &self.basic_blocks
+    }
+
     /// 获取参数列表
     pub fn get_arguments(&self) -> &[ArgumentRef] {
         &self.arguments
