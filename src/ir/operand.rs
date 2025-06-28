@@ -13,15 +13,28 @@ use crate::ir::basic_block::BasicBlock;
 pub type OperandRef = Rc<RefCell<Operand>>;
 
 /// 操作数种类
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum OperandKind {
     Value(ValueRef),            // 值操作数
     Immediate(i64, TypeRef),    // 立即数操作数
     BasicBlock(Rc<RefCell<BasicBlock>>),  // 基本块操作数
 }
 
+impl PartialEq for OperandKind {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (OperandKind::Value(s), OperandKind::Value(o)) => s.borrow().eq(&o.borrow()),
+            (OperandKind::Immediate(s_val, s_type), OperandKind::Immediate(o_val, o_type)) => {
+                s_val == o_val && s_type.borrow().eq(&o_type.borrow())
+            },
+            (OperandKind::BasicBlock(s), OperandKind::BasicBlock(o)) => Rc::ptr_eq(s, o),
+            _ => false,
+        }
+    }
+}
+
 /// 操作数类，表示指令的输入
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Operand {
     kind: OperandKind,
 }

@@ -5,13 +5,14 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use crate::ir::MemorySpace;
 
 // 类型引用，使用 Rc<RefCell<T>> 代替 C++ 中的 std::shared_ptr<T>
 pub type TypeRef = Rc<RefCell<Type>>;
 
 /// 类型种类枚举
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub enum TypeKind {
     // 标量类型
     Int8,       // 8位有符号整数
@@ -32,8 +33,78 @@ pub enum TypeKind {
     Function(TypeRef, Vec<TypeRef>),  // 函数类型(返回类型, 参数类型)
 }
 
+impl PartialEq for TypeKind {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (TypeKind::Int8, TypeKind::Int8) => true,
+            (TypeKind::Uint8, TypeKind::Uint8) => true,
+            (TypeKind::Int16, TypeKind::Int16) => true,
+            (TypeKind::Uint16, TypeKind::Uint16) => true,
+            (TypeKind::Int32, TypeKind::Int32) => true,
+            (TypeKind::Uint32, TypeKind::Uint32) => true,
+            (TypeKind::Bit8, TypeKind::Bit8) => true,
+            (TypeKind::Bit16, TypeKind::Bit16) => true,
+            (TypeKind::Bit32, TypeKind::Bit32) => true,
+            (TypeKind::Vector(elem_ty_self, len_self), TypeKind::Vector(elem_ty_other, len_other)) => {
+                len_self == len_other && elem_ty_self.borrow().eq(&elem_ty_other.borrow())
+            },
+            (TypeKind::Predicate(len_self), TypeKind::Predicate(len_other)) => len_self == len_other,
+            (TypeKind::Void, TypeKind::Void) => true,
+            (TypeKind::Pointer(pointee_ty_self, space_self), TypeKind::Pointer(pointee_ty_other, space_other)) => {
+                space_self == space_other && pointee_ty_self.borrow().eq(&pointee_ty_other.borrow())
+            },
+            (TypeKind::Function(ret_ty_self, param_tys_self), TypeKind::Function(ret_ty_other, param_tys_other)) => {
+                ret_ty_self.borrow().eq(&ret_ty_other.borrow()) &&
+                param_tys_self.len() == param_tys_other.len() &&
+                param_tys_self.iter().zip(param_tys_other.iter()).all(|(s, o)| s.borrow().eq(&o.borrow()))
+            },
+            _ => false,
+        }
+    }
+}
+
+impl Eq for TypeKind {}
+
+impl Hash for TypeKind {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            TypeKind::Int8 => "Int8".hash(state),
+            TypeKind::Uint8 => "Uint8".hash(state),
+            TypeKind::Int16 => "Int16".hash(state),
+            TypeKind::Uint16 => "Uint16".hash(state),
+            TypeKind::Int32 => "Int32".hash(state),
+            TypeKind::Uint32 => "Uint32".hash(state),
+            TypeKind::Bit8 => "Bit8".hash(state),
+            TypeKind::Bit16 => "Bit16".hash(state),
+            TypeKind::Bit32 => "Bit32".hash(state),
+            TypeKind::Vector(elem_type, length) => {
+                "Vector".hash(state);
+                elem_type.borrow().hash(state);
+                length.hash(state);
+            },
+            TypeKind::Predicate(length) => {
+                "Predicate".hash(state);
+                length.hash(state);
+            },
+            TypeKind::Void => "Void".hash(state),
+            TypeKind::Pointer(pointee_type, space) => {
+                "Pointer".hash(state);
+                pointee_type.borrow().hash(state);
+                space.hash(state);
+            },
+            TypeKind::Function(return_type, param_types) => {
+                "Function".hash(state);
+                return_type.borrow().hash(state);
+                for param_type in param_types {
+                    param_type.borrow().hash(state);
+                }
+            },
+        }
+    }
+}
+
 /// 类型结构体
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Type {
     kind: TypeKind,
 }

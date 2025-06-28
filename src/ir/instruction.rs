@@ -5,10 +5,10 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
-use crate::ir::value::{Value, ValueRef};
+use crate::ir::value::Value;
 use crate::ir::types::{Type, TypeRef};
-use crate::ir::operand::{Operand, OperandRef};
-use crate::ir::basic_block::{BasicBlock, BasicBlockRef};
+use crate::ir::operand::OperandRef;
+use crate::ir::basic_block::BasicBlockRef;
 use crate::ir::MemorySpace;
 
 // Instruction 引用
@@ -458,6 +458,7 @@ impl ReductionInstruction {
 
 /// 控制流指令
 #[derive(Debug)]
+#[allow(dead_code)] // 允许未使用的代码，因为 instruction 字段通过方法访问
 pub struct ControlFlowInstruction {
     instruction: Instruction,
 }
@@ -478,6 +479,7 @@ impl ControlFlowInstruction {
 
 /// 特殊指令
 #[derive(Debug)]
+#[allow(dead_code)] // 允许未使用的代码，因为 instruction 字段通过方法访问
 pub struct SpecialInstruction {
     instruction: Instruction,
 }

@@ -5,9 +5,9 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
-use crate::ir::value::{Value, ValueRef};
-use crate::ir::instruction::{Instruction, InstructionRef};
-use crate::ir::types::{Type, TypeKind};
+use crate::ir::value::Value;
+use crate::ir::instruction::InstructionRef;
+use crate::ir::types::Type;
 use crate::ir::function::Function;
 
 // BasicBlock 引用

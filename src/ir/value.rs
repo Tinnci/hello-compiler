@@ -5,13 +5,13 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
-use crate::ir::types::{Type, TypeRef};
+use crate::ir::types::TypeRef;
 
 // Value 引用，使用 Rc<RefCell<T>> 代替 C++ 中的 std::shared_ptr<T>
 pub type ValueRef = Rc<RefCell<Value>>;
 
 /// Value 类，所有 IR 元素的基类
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Value {
     type_: TypeRef,
     name: String,
