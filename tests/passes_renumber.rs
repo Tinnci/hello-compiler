@@ -101,7 +101,7 @@ fn test_ssa_renumber() {
     let mut pm = PassManager::new();
     pm.register_pass(SSARenumber);
     pm.add_to_pipeline("optimizer::SSARenumber");
-    pm.run(&module);
+    pm.run(&module).expect("PassManager 执行失败");
     
     // 验证结果
     assert!(check_ssa_names(&module));

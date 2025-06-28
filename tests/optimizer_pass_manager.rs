@@ -31,7 +31,7 @@ fn test_pass_manager_exec_order() {
     let module = Rc::new(RefCell::new(Module::new("dummy".to_string())));
 
     // 运行 PassManager
-    pm.run(&module);
+    pm.run(&module).expect("PassManager 执行失败");
 
     // 断言 DummyPass 的 run 被调用一次
     assert_eq!(COUNTER.load(Ordering::SeqCst), 1);

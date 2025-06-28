@@ -18,5 +18,8 @@ pub fn run_optimizer(module: &crate::ir::ModuleRef) {
     pm.register_pass(SSARenumber);
     pm.add_to_pipeline("optimizer::SSARenumber");
 
-    pm.run(module);
+    // 运行优化器，处理可能的错误
+    if let Err(err) = pm.run(module) {
+        eprintln!("优化器执行失败: {}", err);
+    }
 }
