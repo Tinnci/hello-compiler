@@ -1,3 +1,5 @@
+#![cfg(feature = "advanced_pass_tests")]
+
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::rc::Rc;

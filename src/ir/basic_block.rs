@@ -61,21 +61,21 @@ impl BasicBlock {
     }
 
     /// 添加指令
-    pub fn add_instruction(&mut self, instruction: InstructionRef) {
+    pub fn add_instruction(&mut self, instruction: InstructionRef, this_bb_ref: BasicBlockRef) {
         // 设置指令的父基本块
         instruction
             .borrow_mut()
-            .set_parent(Some(Rc::new(RefCell::new(self.clone()))));
+            .set_parent_bb(Some(this_bb_ref.clone())); // Clone the Rc to pass it
         self.instructions.push(instruction);
     }
 
     /// 插入指令到指定位置
-    pub fn insert_instruction(&mut self, index: usize, instruction: InstructionRef) {
+    pub fn insert_instruction(&mut self, index: usize, instruction: InstructionRef, this_bb_ref: BasicBlockRef) {
         assert!(index <= self.instructions.len());
         // 设置指令的父基本块
         instruction
             .borrow_mut()
-            .set_parent(Some(Rc::new(RefCell::new(self.clone()))));
+            .set_parent_bb(Some(this_bb_ref.clone())); // Clone the Rc to pass it
         self.instructions.insert(index, instruction);
     }
 
@@ -87,7 +87,7 @@ impl BasicBlock {
             .position(|i| Rc::ptr_eq(i, instruction))
         {
             // 清除指令的父基本块
-            self.instructions[pos].borrow_mut().set_parent(None);
+            self.instructions[pos].borrow_mut().set_parent_bb(None);
             self.instructions.remove(pos);
             true
         } else {
@@ -99,7 +99,7 @@ impl BasicBlock {
     pub fn clear_instructions(&mut self) {
         // 清除所有指令的父基本块
         for instruction in &self.instructions {
-            instruction.borrow_mut().set_parent(None);
+            instruction.borrow_mut().set_parent_bb(None);
         }
         self.instructions.clear();
     }

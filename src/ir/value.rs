@@ -6,21 +6,32 @@ use crate::ir::types::TypeRef;
 use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
+use std::hash::{Hash, Hasher};
 
 // Value 引用，使用 Rc<RefCell<T>> 代替 C++ 中的 std::shared_ptr<T>
 pub type ValueRef = Rc<RefCell<Value>>;
 
-/// Value 类，所有 IR 元素的基类
-#[derive(Debug, PartialEq, Eq)]
+/// IR 中的值。可以是指令结果、函数参数或常量。
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Value {
     type_: TypeRef,
     name: String,
 }
 
+impl Hash for Value {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.type_.borrow().hash(state);
+        self.name.hash(state);
+    }
+}
+
 impl Value {
     /// 创建一个新的 Value
     pub fn new(type_: TypeRef, name: String) -> Self {
-        Value { type_, name }
+        Self {
+            type_,
+            name,
+        }
     }
 
     /// 获取值的类型
@@ -43,9 +54,9 @@ impl Value {
         self.name = name;
     }
 
-    /// 判断是否为常量
+    /// 检查此值是否为常量 (通过名称是否能解析为数字判断)
     pub fn is_constant(&self) -> bool {
-        false
+        self.name.parse::<i64>().is_ok() || self.name.parse::<f64>().is_ok()
     }
 }
 

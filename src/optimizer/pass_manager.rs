@@ -5,6 +5,7 @@
 use crate::ir::ModuleRef;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt;
+use std::time::{Duration, Instant};
 
 /// Pass 执行错误
 #[derive(Debug)]
@@ -33,6 +34,81 @@ impl fmt::Display for PassError {
 
 impl std::error::Error for PassError {}
 
+/// Pass 执行统计信息
+#[derive(Debug, Clone)]
+pub struct PassStatistics {
+    /// Pass 名称
+    pub name: String,
+    /// 执行时间
+    pub duration: Duration,
+    /// 是否被跳过
+    pub skipped: bool,
+    /// 跳过原因（如果被跳过）
+    pub skip_reason: Option<String>,
+}
+
+impl fmt::Display for PassStatistics {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.skipped {
+            write!(
+                f,
+                "{}: 已跳过 ({})",
+                self.name,
+                self.skip_reason.as_deref().unwrap_or("未知原因")
+            )
+        } else {
+            write!(
+                f,
+                "{}: 执行时间 {:.2}ms",
+                self.name,
+                self.duration.as_secs_f64() * 1000.0
+            )
+        }
+    }
+}
+
+/// Pass 分组
+#[derive(Debug)]
+pub struct PassGroup {
+    /// 分组名称
+    name: String,
+    /// 分组描述
+    description: String,
+    /// 分组中的 Pass 名称
+    passes: Vec<String>,
+}
+
+impl PassGroup {
+    /// 创建新的 Pass 分组
+    pub fn new(name: &str, description: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            description: description.to_string(),
+            passes: Vec::new(),
+        }
+    }
+
+    /// 添加 Pass 到分组
+    pub fn add_pass(&mut self, pass_name: &str) {
+        self.passes.push(pass_name.to_string());
+    }
+
+    /// 获取分组名称
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    /// 获取分组描述
+    pub fn get_description(&self) -> &str {
+        &self.description
+    }
+
+    /// 获取分组中的 Pass 名称
+    pub fn get_passes(&self) -> &[String] {
+        &self.passes
+    }
+}
+
 /// 所有优化 Pass 需实现的统一接口
 pub trait Pass {
     /// Pass 唯一名称（建议使用 "namespace::PassName" 格式）
@@ -43,6 +119,19 @@ pub trait Pass {
         Vec::new()
     }
 
+    /// 检查是否应该运行此 Pass
+    /// 
+    /// 默认总是返回 true。子类可以重写此方法以实现条件执行。
+    /// 例如，可以基于命令行参数、模块特性或其他条件决定是否执行。
+    fn should_run(&self, _module: &ModuleRef) -> bool {
+        true
+    }
+
+    /// 获取 Pass 描述
+    fn description(&self) -> &'static str {
+        "No description provided"
+    }
+
     /// 运行 Pass
     fn run(&self, module: &ModuleRef);
 }
@@ -51,6 +140,13 @@ pub trait Pass {
 pub struct PassManager {
     registered: HashMap<String, Box<dyn Pass>>,
     pipeline: Vec<String>,
+    groups: HashMap<String, PassGroup>,
+    /// 是否收集执行统计信息
+    collect_stats: bool,
+    /// 最近一次执行的统计信息
+    last_run_stats: Vec<PassStatistics>,
+    /// 是否启用详细日志
+    verbose: bool,
 }
 
 impl PassManager {
@@ -59,7 +155,23 @@ impl PassManager {
         Self {
             registered: HashMap::new(),
             pipeline: Vec::new(),
+            groups: HashMap::new(),
+            collect_stats: false,
+            last_run_stats: Vec::new(),
+            verbose: false,
         }
+    }
+
+    /// 启用统计信息收集
+    pub fn enable_statistics(&mut self) -> &mut Self {
+        self.collect_stats = true;
+        self
+    }
+
+    /// 启用详细日志
+    pub fn enable_verbose(&mut self) -> &mut Self {
+        self.verbose = true;
+        self
     }
 
     /// 注册一个 Pass
@@ -71,6 +183,38 @@ impl PassManager {
     /// 将 Pass 加入执行流水线
     pub fn add_to_pipeline(&mut self, pass_name: &'static str) {
         self.pipeline.push(pass_name.to_string());
+    }
+
+    /// 创建新的 Pass 分组
+    pub fn create_group(&mut self, name: &str, description: &str) -> &mut Self {
+        let group = PassGroup::new(name, description);
+        self.groups.insert(name.to_string(), group);
+        self
+    }
+
+    /// 向分组添加 Pass
+    pub fn add_pass_to_group(&mut self, group_name: &str, pass_name: &str) -> Result<&mut Self, PassError> {
+        if !self.groups.contains_key(group_name) {
+            return Err(PassError::NotRegistered(format!("分组 '{}'", group_name)));
+        }
+        
+        if let Some(group) = self.groups.get_mut(group_name) {
+            group.add_pass(pass_name);
+        }
+        
+        Ok(self)
+    }
+
+    /// 将整个分组添加到执行流水线
+    pub fn add_group_to_pipeline(&mut self, group_name: &str) -> Result<&mut Self, PassError> {
+        if let Some(group) = self.groups.get(group_name) {
+            for pass in group.get_passes() {
+                self.pipeline.push(pass.clone());
+            }
+            Ok(self)
+        } else {
+            Err(PassError::NotRegistered(format!("分组 '{}'", group_name)))
+        }
     }
 
     /// 检查所有依赖是否已注册
@@ -203,14 +347,61 @@ impl PassManager {
     }
 
     /// 运行 pipeline 上的 Pass，自动处理依赖关系
-    pub fn run(&self, module: &ModuleRef) -> Result<(), PassError> {
+    pub fn run(&mut self, module: &ModuleRef) -> Result<(), PassError> {
         // 拓扑排序
         let sorted_pipeline = self.topological_sort()?;
+
+        // 清空上次运行的统计信息
+        if self.collect_stats {
+            self.last_run_stats.clear();
+        }
 
         // 按顺序执行
         for name in &sorted_pipeline {
             if let Some(pass) = self.registered.get(name) {
-                pass.run(module);
+                // 检查是否应该运行此 Pass
+                let should_run = pass.should_run(module);
+                
+                if self.verbose {
+                    if should_run {
+                        println!("正在运行 Pass: {} ({})", pass.name(), pass.description());
+                    } else {
+                        println!("跳过 Pass: {} ({})", pass.name(), pass.description());
+                    }
+                }
+                
+                // 收集统计信息
+                if self.collect_stats {
+                    if should_run {
+                        let start = Instant::now();
+                        pass.run(module);
+                        let duration = start.elapsed();
+                        
+                        let stats = PassStatistics {
+                            name: name.clone(),
+                            duration,
+                            skipped: false,
+                            skip_reason: None,
+                        };
+                        
+                        self.last_run_stats.push(stats);
+                        
+                        if self.verbose {
+                            println!("  完成: {:.2}ms", duration.as_secs_f64() * 1000.0);
+                        }
+                    } else {
+                        let stats = PassStatistics {
+                            name: name.clone(),
+                            duration: Duration::from_secs(0),
+                            skipped: true,
+                            skip_reason: Some("条件不满足".to_string()),
+                        };
+                        
+                        self.last_run_stats.push(stats);
+                    }
+                } else if should_run {
+                    pass.run(module);
+                }
             }
         }
 
@@ -225,6 +416,51 @@ impl PassManager {
     /// 获取当前 pipeline 中的 Pass 名称
     pub fn get_pipeline(&self) -> &[String] {
         &self.pipeline
+    }
+
+    /// 获取最近一次运行的统计信息
+    pub fn get_statistics(&self) -> &[PassStatistics] {
+        &self.last_run_stats
+    }
+
+    /// 打印最近一次运行的统计信息
+    pub fn print_statistics(&self) {
+        if self.last_run_stats.is_empty() {
+            println!("没有可用的统计信息。请先运行 PassManager 并启用统计功能。");
+            return;
+        }
+        
+        println!("Pass 执行统计:");
+        println!("----------------------------------------");
+        
+        let mut total_time = Duration::from_secs(0);
+        let mut executed_count = 0;
+        let mut skipped_count = 0;
+        
+        for stats in &self.last_run_stats {
+            println!("  {}", stats);
+            
+            if stats.skipped {
+                skipped_count += 1;
+            } else {
+                executed_count += 1;
+                total_time += stats.duration;
+            }
+        }
+        
+        println!("----------------------------------------");
+        println!(
+            "总计: 执行 {} 个 Pass, 跳过 {} 个, 总时间: {:.2}ms",
+            executed_count,
+            skipped_count,
+            total_time.as_secs_f64() * 1000.0
+        );
+    }
+
+    /// 清除 pipeline
+    pub fn clear_pipeline(&mut self) -> &mut Self {
+        self.pipeline.clear();
+        self
     }
 }
 
