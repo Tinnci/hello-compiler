@@ -1,7 +1,5 @@
-use crate::ir::{ModuleRef, Value};
+use crate::ir::ModuleRef;
 use crate::optimizer::pass_manager::Pass;
-
-use std::collections::HashSet;
 
 /// 支持折叠的二元整数运算指令
 const FOLDABLE_BIN_OPS: &[&str] = &[

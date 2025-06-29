@@ -1,14 +1,21 @@
-#![cfg(feature = "advanced_pass_tests")]
-use vemu_venus_compiler::ir::Module;
-use vemu_venus_compiler::optimizer::pass_manager::PassManager;
-use vemu_venus_compiler::optimizer::passes::{
+use vil::ir::Module;
+use vil::optimizer::pass_manager::PassManager;
+use vil::optimizer::passes::{
     SSARenumberPass, DeadCodeEliminationPass, ConstantFoldingPass, CommonSubexpressionEliminationPass
 };
+use std::rc::Rc;
+use std::cell::RefCell;
+
+type ModuleRef = Rc<RefCell<vil::ir::Module>>;
+
+fn new_test_module() -> ModuleRef {
+    Rc::new(RefCell::new(Module::new("test_module".to_string())))
+}
 
 #[test]
 fn test_pass_manager_statistics() {
     // 创建测试模块
-    let module = Module::new("test_module");
+    let module = new_test_module();
     
     // 创建 PassManager 并启用统计
     let mut pm = PassManager::new();
@@ -35,10 +42,11 @@ fn test_pass_manager_statistics() {
 #[test]
 fn test_pass_groups() {
     // 创建测试模块
-    let module = Module::new("test_module");
+    let module = new_test_module();
     
     // 创建 PassManager
     let mut pm = PassManager::new();
+    pm.enable_statistics();
     
     // 注册 Pass
     pm.register_pass(SSARenumberPass::new());
@@ -70,64 +78,60 @@ fn test_pass_groups() {
 #[test]
 fn test_conditional_execution() {
     // 创建测试模块
-    let module = Module::new("test_module");
+    let module = new_test_module();
     
-    // 创建一个条件 Pass
-    struct ConditionalPass {
-        should_run_flag: bool,
+    // 创建两个条件 Pass，一个会运行，一个不会
+    struct ConditionalPassAlwaysRun;
+    impl vil::optimizer::Pass for ConditionalPassAlwaysRun {
+        fn name(&self) -> &'static str { "test::ConditionalPassAlwaysRun" }
+        fn description(&self) -> &'static str { "测试条件执行的 Pass (总是运行)" }
+        fn should_run(&self, _module: &vil::ir::ModuleRef) -> bool { true }
+        fn run(&self, _module: &vil::ir::ModuleRef) { /* 空实现 */ }
     }
-    
-    impl vemu_venus_compiler::optimizer::Pass for ConditionalPass {
-        fn name(&self) -> &'static str {
-            "test::ConditionalPass"
-        }
-        
-        fn description(&self) -> &'static str {
-            "测试条件执行的 Pass"
-        }
-        
-        fn should_run(&self, _module: &vemu_venus_compiler::ir::ModuleRef) -> bool {
-            self.should_run_flag
-        }
-        
-        fn run(&self, _module: &vemu_venus_compiler::ir::ModuleRef) {
-            // 空实现
-        }
+
+    struct ConditionalPassNeverRun;
+    impl vil::optimizer::Pass for ConditionalPassNeverRun {
+        fn name(&self) -> &'static str { "test::ConditionalPassNeverRun" }
+        fn description(&self) -> &'static str { "测试条件执行的 Pass (永不运行)" }
+        fn should_run(&self, _module: &vil::ir::ModuleRef) -> bool { false }
+        fn run(&self, _module: &vil::ir::ModuleRef) { /* 空实现 */ }
     }
-    
-    // 创建 PassManager 并启用统计
+
     let mut pm = PassManager::new();
     pm.enable_statistics();
-    
-    // 注册两个条件 Pass，一个会运行，一个不会
-    pm.register_pass(ConditionalPass { should_run_flag: true });
-    pm.register_pass(ConditionalPass { should_run_flag: false });
-    
-    // 添加到执行流水线
-    pm.add_to_pipeline("test::ConditionalPass");
-    
+
+    // 注册两个条件 Pass
+    pm.register_pass(ConditionalPassAlwaysRun);
+    pm.register_pass(ConditionalPassNeverRun);
+
+    // 将两个 Pass 都添加到执行流水线
+    pm.add_to_pipeline("test::ConditionalPassAlwaysRun");
+    pm.add_to_pipeline("test::ConditionalPassNeverRun");
+
     // 运行优化
     pm.run(&module).expect("优化过程中出错");
-    
+
     // 验证统计信息
     let stats = pm.get_statistics();
-    assert_eq!(stats.len(), 1);
-    assert_eq!(stats[0].name, "test::ConditionalPass");
+    assert_eq!(stats.len(), 2);
+    assert_eq!(stats[0].name, "test::ConditionalPassAlwaysRun");
     assert!(!stats[0].skipped);
+    assert_eq!(stats[1].name, "test::ConditionalPassNeverRun");
+    assert!(stats[1].skipped);
 }
 
 #[test]
 fn test_ssa_renumber_strategies() {
     // 创建测试模块
-    let module = Module::new("test_module");
+    let module = new_test_module();
     
     // 测试不同的命名策略
     let sequential = SSARenumberPass::new()
-        .with_strategy(vemu_venus_compiler::optimizer::passes::ssa_renumber::NamingStrategy::Sequential);
+        .with_strategy(vil::optimizer::passes::ssa_renumber::NamingStrategy::Sequential);
     let type_based = SSARenumberPass::new()
-        .with_strategy(vemu_venus_compiler::optimizer::passes::ssa_renumber::NamingStrategy::TypeBased);
+        .with_strategy(vil::optimizer::passes::ssa_renumber::NamingStrategy::TypeBased);
     let block_based = SSARenumberPass::new()
-        .with_strategy(vemu_venus_compiler::optimizer::passes::ssa_renumber::NamingStrategy::BlockBased);
+        .with_strategy(vil::optimizer::passes::ssa_renumber::NamingStrategy::BlockBased);
     
     // 创建 PassManager
     let mut pm = PassManager::new();

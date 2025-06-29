@@ -1,4 +1,4 @@
-use crate::optimizer::pass_manager::Pass;
+use crate::optimizer::Pass;
 
 /// SSA 命名策略
 #[derive(Clone, Copy)]
@@ -31,8 +31,6 @@ impl SSARenumberPass {
 
     /// 核心逻辑：遍历函数并为有返回值的指令重新命名
     fn process_function(&self, func: &crate::ir::function::FunctionRef) {
-        use crate::ir::instruction::InstructionModifier;
-
         match self.strategy {
             NamingStrategy::Sequential | NamingStrategy::TypeBased => {
                 let mut counter: usize = 0;
@@ -95,7 +93,7 @@ impl Pass for SSARenumberPass {
 #[cfg(all(test, feature = "advanced_pass_tests"))]
 mod tests {
     use super::*;
-    use crate::ir::{module::Module, types::{Type, TypeKind}, instruction::{Instruction, Opcode, InstructionModifier}, basic_block::BasicBlock, function::Function};
+    use crate::ir::{module::Module, types::{Type, TypeKind}, instruction::{Instruction, Opcode}, basic_block::BasicBlock, function::Function};
     use std::rc::Rc;
     use std::cell::RefCell;
 

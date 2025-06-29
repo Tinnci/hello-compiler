@@ -1,16 +1,10 @@
-#![cfg(feature = "advanced_pass_tests")]
-
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::rc::Rc;
 
-use vemu_venus_compiler::ir::basic_block::BasicBlock;
-use vemu_venus_compiler::ir::function::Function;
-use vemu_venus_compiler::ir::instruction::{Instruction, InstructionModifier, Opcode};
-use vemu_venus_compiler::ir::module::Module;
-use vemu_venus_compiler::ir::types::{Type, TypeKind};
-use vemu_venus_compiler::optimizer::pass_manager::PassManager;
-use vemu_venus_compiler::optimizer::passes::ssa_renumber::SSARenumberPass as SSARenumber;
+use vil::ir::{BasicBlock, Function, Instruction, InstructionModifier, Opcode, Module, Type, TypeKind};
+use vil::optimizer::pass_manager::PassManager;
+use vil::optimizer::passes::ssa_renumber::SSARenumberPass as SSARenumber;
 
 /// 构建一个简单的测试 IR 模块，包含一个函数和多个指令
 fn build_test_module() -> Rc<RefCell<Module>> {
@@ -34,21 +28,24 @@ fn build_test_module() -> Rc<RefCell<Module>> {
     // 添加指令
     let instr1 = Rc::new(RefCell::new(Instruction::new(
         Opcode::Add,
-        int_type.clone(),
+        Some(Rc::new(RefCell::new(vil::ir::value::Value::new(int_type.clone(), "".to_string())))),
+        vec![],
         InstructionModifier::None,
     )));
     instr1.borrow_mut().set_name("old_name_1".to_string());
     
     let instr2 = Rc::new(RefCell::new(Instruction::new(
         Opcode::Sub,
-        int_type.clone(),
+        Some(Rc::new(RefCell::new(vil::ir::value::Value::new(int_type.clone(), "".to_string())))),
+        vec![],
         InstructionModifier::None,
     )));
     instr2.borrow_mut().set_name("old_name_2".to_string());
     
     let instr3 = Rc::new(RefCell::new(Instruction::new(
         Opcode::Mul,
-        int_type.clone(),
+        Some(Rc::new(RefCell::new(vil::ir::value::Value::new(int_type.clone(), "".to_string())))),
+        vec![],
         InstructionModifier::None,
     )));
     instr3.borrow_mut().set_name("old_name_3".to_string());
@@ -102,8 +99,8 @@ fn test_ssa_renumber() {
     
     // 运行 SSA Renumber Pass
     let mut pm = PassManager::new();
-    pm.register_pass(SSARenumber);
-    pm.add_to_pipeline("optimizer::SSARenumber");
+    pm.register_pass(SSARenumber::new());
+    pm.add_to_pipeline("optimizer::SSARenumberPass");
     pm.run(&module).expect("PassManager 执行失败");
     
     // 验证结果
