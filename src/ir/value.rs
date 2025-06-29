@@ -58,6 +58,16 @@ impl Value {
     pub fn is_constant(&self) -> bool {
         self.name.parse::<i64>().is_ok() || self.name.parse::<f64>().is_ok()
     }
+
+    /// 判断该值是否为对其他指令结果的引用（简单地认为以 '%' 开头且非常量）
+    pub fn is_reference(&self) -> bool {
+        !self.is_constant() && self.name.starts_with('%')
+    }
+
+    /// 如果是整型常量，返回其 i64 值
+    pub fn as_i64(&self) -> Option<i64> {
+        self.name.parse::<i64>().ok()
+    }
 }
 
 impl fmt::Display for Value {

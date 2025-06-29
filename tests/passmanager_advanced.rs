@@ -1,6 +1,6 @@
 #![cfg(feature = "advanced_pass_tests")]
 use vemu_venus_compiler::ir::Module;
-use vemu_venus_compiler::optimizer::pass_manager::{PassManager, NamingStrategy};
+use vemu_venus_compiler::optimizer::pass_manager::PassManager;
 use vemu_venus_compiler::optimizer::passes::{
     SSARenumberPass, DeadCodeEliminationPass, ConstantFoldingPass, CommonSubexpressionEliminationPass
 };

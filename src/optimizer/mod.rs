@@ -8,7 +8,6 @@ pub mod pass_manager;
 
 // 引入子模块及占位 Pass
 pub mod passes;
-use passes::ssa_renumber::SSARenumberPass;
 
 // 重新导出 pass_manager 中的 Pass trait
 pub use pass_manager::Pass;

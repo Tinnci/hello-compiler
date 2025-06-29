@@ -4,13 +4,13 @@ use std::cell::RefCell;
 use std::collections::HashSet;
 use std::rc::Rc;
 
-use vil::ir::basic_block::BasicBlock;
-use vil::ir::function::Function;
-use vil::ir::instruction::{Instruction, InstructionModifier, Opcode};
-use vil::ir::module::Module;
-use vil::ir::types::{Type, TypeKind};
-use vil::optimizer::pass_manager::PassManager;
-use vil::optimizer::passes::ssa_renumber::SSARenumber;
+use vemu_venus_compiler::ir::basic_block::BasicBlock;
+use vemu_venus_compiler::ir::function::Function;
+use vemu_venus_compiler::ir::instruction::{Instruction, InstructionModifier, Opcode};
+use vemu_venus_compiler::ir::module::Module;
+use vemu_venus_compiler::ir::types::{Type, TypeKind};
+use vemu_venus_compiler::optimizer::pass_manager::PassManager;
+use vemu_venus_compiler::optimizer::passes::ssa_renumber::SSARenumberPass as SSARenumber;
 
 /// 构建一个简单的测试 IR 模块，包含一个函数和多个指令
 fn build_test_module() -> Rc<RefCell<Module>> {
@@ -54,9 +54,9 @@ fn build_test_module() -> Rc<RefCell<Module>> {
     instr3.borrow_mut().set_name("old_name_3".to_string());
     
     // 将指令添加到基本块
-    bb.borrow_mut().add_instruction(instr1);
-    bb.borrow_mut().add_instruction(instr2);
-    bb.borrow_mut().add_instruction(instr3);
+    bb.borrow_mut().add_instruction(instr1.clone(), bb.clone());
+    bb.borrow_mut().add_instruction(instr2.clone(), bb.clone());
+    bb.borrow_mut().add_instruction(instr3.clone(), bb.clone());
     
     // 将基本块添加到函数
     function.borrow_mut().add_basic_block(bb);
@@ -76,7 +76,8 @@ fn check_ssa_names(module: &Rc<RefCell<Module>>) -> bool {
         for bb in function.borrow().get_basic_blocks() {
             for instr in bb.borrow().get_instructions() {
                 let instr_borrowed = instr.borrow();
-                let name = instr_borrowed.get_name();
+                let name_opt = instr_borrowed.get_name();
+                let name = name_opt.as_deref().unwrap_or("");
                 
                 // 检查名称格式是否为 %数字
                 if !name.starts_with('%') {
@@ -114,7 +115,7 @@ fn test_ssa_renumber() {
     let bb_borrowed = bb.borrow();
     let instructions = bb_borrowed.get_instructions();
     
-    assert_eq!(instructions[0].borrow().get_name(), "%0");
-    assert_eq!(instructions[1].borrow().get_name(), "%1");
-    assert_eq!(instructions[2].borrow().get_name(), "%2");
+    assert_eq!(instructions[0].borrow().get_name(), Some("%0".to_string()));
+    assert_eq!(instructions[1].borrow().get_name(), Some("%1".to_string()));
+    assert_eq!(instructions[2].borrow().get_name(), Some("%2".to_string()));
 } 

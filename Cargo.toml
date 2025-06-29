@@ -20,6 +20,7 @@ tempfile = "3.8"           # 临时文件处理
 [features]
 default = []
 llvm-backend = ["inkwell"]  # 启用LLVM后端
+advanced_pass_tests = []
 
 # 工具二进制文件
 [[bin]]
